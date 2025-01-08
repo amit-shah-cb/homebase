@@ -16,7 +16,6 @@ interface VideoProps {
 }
 
 export function Video({
-  //eslint-disable-next-line
   videoId,
   url,
   channel,
