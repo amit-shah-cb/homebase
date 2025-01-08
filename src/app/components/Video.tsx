@@ -42,20 +42,14 @@ export function Video({
   const timeRef = useRef<number>(0);
 
   useEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting);
           if (entry.isIntersecting) {
-            setIsVisible(true);
             videoRef.current?.play();
-            setPlaying(true);
           } else {
-            setIsVisible(false);
             videoRef.current?.pause();
-            setPlaying(false);
           }
         });
       },
@@ -100,7 +94,7 @@ export function Video({
         onTimeUpdate={handleTimeUpdate}
         crossOrigin="anonymous" 
       ></video>
-      <VideoOverlay 
+       <VideoOverlay 
         videoElement={videoRef.current}
         isVisible={isVisible}
       />
