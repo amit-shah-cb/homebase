@@ -102,7 +102,7 @@ export function VideoFeed() {
   // Initial fetch
   useEffect(() => {
     fetchVideos();
-  }, []);
+  });
 
   return (
     <div 

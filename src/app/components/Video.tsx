@@ -34,34 +34,40 @@ export function Video({
     }
   };
 
+  const timeRef = useRef<number>(0);
+
   useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            videoRef.current?.play();
+            videoElement.play();
             setPlaying(true);
           } else {
-            videoRef.current?.pause();
+            videoElement.pause();
             setPlaying(false);
           }
         });
       },
-      {
-        threshold: 0.6 // Video will play when 60% visible
-      }
+      { threshold: 0.6 }
     );
 
-    if (videoRef.current) {
-      observer.observe(videoRef.current);
-    }
+    observer.observe(videoElement);
 
     return () => {
-      if (videoRef.current) {
-        observer.unobserve(videoRef.current);
-      }
+      observer.unobserve(videoElement);
+      observer.disconnect();
     };
   }, []);
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      timeRef.current = videoRef.current.currentTime;
+    }
+  };
 
   const onVideoPress = () => {
     if (videoRef.current) {
@@ -85,6 +91,7 @@ export function Video({
         src={url}
         playsInline // Add this for better mobile support
         muted // Add this if you want videos to autoplay on mobile
+        onTimeUpdate={handleTimeUpdate}
       ></video>
      
       {/* ... rest of your JSX ... */}
