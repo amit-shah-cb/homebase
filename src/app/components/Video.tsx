@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from "react";
 import "./Video.css";
 
 interface VideoProps {
+  videoId: string;
   url: string;
   channel: string;
   description: string;
@@ -14,6 +15,8 @@ interface VideoProps {
 }
 
 export function Video({
+  //eslint-disable-next-line
+  videoId,
   url,
   channel,
   description,
