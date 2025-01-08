@@ -1,0 +1,110 @@
+
+/* Add touch-action to help with mobile scrolling */
+.video {
+    height: calc(100vh - 48px) !important;
+    width: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always; /* Force stopping at each snap point */
+    position: relative;
+    touch-action: pan-y pinch-zoom; /* Better touch handling */
+    border-radius: 24px; /* Match container rounding */
+    overflow: hidden; /* Ensure video content stays within rounded borders */
+    margin-bottom: 16px;
+  }
+
+.video__player {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 24px; /* Match container rounding */
+}
+
+/* Optional: Add a gradient overlay to make text more readable */
+.video::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  pointer-events: none;
+  border-radius: 24px; /* Match container rounding */
+}
+  .video__bottom {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    width: 100%;
+    padding: 20px;
+    justify-content: space-between;
+  }
+  
+  .video__details {
+    color: white;
+    flex: 1;
+  }
+  
+  .video__details > h3 {
+    margin-bottom: 8px;
+  }
+  
+  .video__details > p {
+    margin-bottom: 8px;
+  }
+  
+  .video__song {
+    display: flex;
+    align-items: center;
+  }
+  
+  .video__song > p {
+    margin-left: 8px;
+  }
+  
+  .video__sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    color: white;
+  }
+  
+  .video__sidebarButton {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .video__sidebarButton > p {
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .video__muteButton {
+    position: absolute;
+    bottom: 120px; /* Adjust based on your layout */
+    right: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    z-index: 10;
+  }
+  
+  .video__muteButton:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  .video__muteButton .material-icons {
+    color: white;
+    font-size: 24px;
+  }

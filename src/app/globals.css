@@ -19,3 +19,39 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.app {
+  height: 100vh;
+  background-color: black;
+  display: grid;
+  place-items: center;
+  overflow: hidden; /* Prevent body scroll */
+  padding: 24px 0; 
+}
+
+.app__videos {
+  position: relative;
+  height: calc(100vh - 48px); 
+  width: 100%;
+  max-width: 500px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth; /* Add smooth scrolling */
+  overscroll-behavior-y: contain; /* Prevent scroll chain to parent */
+  padding: 16px 0;
+   /* Hide scrollbar for Chrome, Safari and Opera */
+   &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Prevent momentum scrolling on iOS */
+@supports (-webkit-touch-callout: none) {
+  .app__videos {
+    -webkit-overflow-scrolling: auto;
+  }
+}
