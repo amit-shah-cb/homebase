@@ -17,14 +17,14 @@ interface VideoData {
 export function VideoFeed() {
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 5 }); // Increased initial buffer
+  const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastVideoRef = useRef<HTMLDivElement>(null);
 
   // Fetch videos with delay to prevent rapid consecutive calls
-  const fetchVideos = useCallback(async (page: number) => {
+  const fetchVideos = useCallback(async () => {
     if (loading) return;
     setLoading(true);
+    console.log("fetching videos");
     try {
       // Simulated API call with your JSON data
       const newVideos = [
@@ -70,79 +70,38 @@ export function VideoFeed() {
         }
       ]
       setVideos(prev => [...prev, ...newVideos]);
+      setPage(prev => prev + 1);
     } catch (error) {
       console.error('Error fetching videos:', error);
     } finally {
-      setTimeout(() => setLoading(false), 300); // Add slight delay to prevent rapid refetch
+      setTimeout(() => setLoading(false), 1000);
     }
-  }, [loading]);
+  }, [page, loading]);
 
-  // Optimized scroll handler with debounce
+  // Handle scroll for infinite loading
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || loading) return;
 
-    const container = containerRef.current;
-    const scrollTop = container.scrollTop;
-    const height = container.clientHeight;
-    const itemHeight = height;
-
-    // Increased buffer size for smoother scrolling
-    const start = Math.max(0, Math.floor(scrollTop / itemHeight) - 2);
-    const end = Math.min(
-      videos.length,
-      Math.ceil((scrollTop + height) / itemHeight) + 2
-    );
-
-    requestAnimationFrame(() => {
-      setVisibleRange({ start, end });
-    });
-  }, [videos.length]);
-
-  // Optimized intersection observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !loading) {
-          const nextPage = Math.floor(videos.length / 4);
-          fetchVideos(nextPage);
-        }
-      },
-      { 
-        threshold: 0.5,
-        rootMargin: '100px' // Preload earlier
-      }
-    );
-
-    if (lastVideoRef.current) {
-      observer.observe(lastVideoRef.current);
+    const { scrollTop, clientHeight, scrollHeight } = containerRef.current;
+    
+    // If we're near the bottom (within 100px), fetch more videos
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      fetchVideos();
     }
+  }, [fetchVideos, loading]);
 
-    return () => observer.disconnect();
-  }, [videos.length, loading, fetchVideos]);
-
-  // Optimized scroll listener
+  // Add scroll listener
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      let scrollTimeout: NodeJS.Timeout | null = null;
-      
-      const throttledScroll = () => {
-        if (!scrollTimeout) {
-          scrollTimeout = setTimeout(() => {
-            handleScroll();
-            scrollTimeout = null;
-          }, 50); // Throttle scroll events
-        }
-      };
-
-      container.addEventListener('scroll', throttledScroll);
-      return () => container.removeEventListener('scroll', throttledScroll);
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
 
   // Initial fetch
   useEffect(() => {
-    fetchVideos(0);
+    fetchVideos();
   }, []);
 
   return (
@@ -150,13 +109,13 @@ export function VideoFeed() {
       className="app__videos"
       ref={containerRef}
     >
-      {videos.slice(visibleRange.start, visibleRange.end).map((video, index) => (
+      {videos.map((video) => (
         <div
           key={video.id}
-          ref={index === visibleRange.end - visibleRange.start - 1 ? lastVideoRef : null}
           className="video-container"
         >
           <Video
+            videoId={video.id}
             url={video.url}
             channel={video.channel}
             description={video.description}
