@@ -19,99 +19,77 @@ export function VideoFeed() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastVideoRef = useRef<HTMLDivElement>(null);
 
-  // Fetch videos with delay to prevent rapid consecutive calls
   const fetchVideos = useCallback(async () => {
     if (loading) return;
+    
     setLoading(true);
-    console.log("fetching videos");
+    console.log("Fetching page:", page);
+
     try {
-      // Simulated API call with your JSON data
+      // Simulated API call
       const newVideos = [
         {
           "id": `${page * 4 + 1}`,
           "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-          "channel": "channelName",
-          "description": "Video description here",
+          "channel": `channel_${page * 4 + 1}`,
+          "description": `Video ${page * 4 + 1} description`,
           "song": "Original Sound - Artist Name",
-          "likes": 1234,
-          "messages": 321,
-          "shares": 100
+          "likes": Math.floor(Math.random() * 1000),
+          "messages": Math.floor(Math.random() * 500),
+          "shares": Math.floor(Math.random() * 200)
         },
-        {
-          "id": `${page * 4 + 2}`,
-          "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-          "channel": "channelName",
-          "description": "Video description here",
-          "song": "Original Sound - Artist Name",
-          "likes": 1234,
-          "messages": 321,
-          "shares": 100
-        },
-        {
-          "id": `${page * 4 + 3}`,
-          "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-          "channel": "channelName",
-          "description": "Video description here",
-          "song": "Original Sound - Artist Name",
-          "likes": 1234,
-          "messages": 321,
-          "shares": 100
-        },
-        {
-          "id": `${page * 4 + 4}`,
-          "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-          "channel": "channelName",
-          "description": "Video description here",
-          "song": "Original Sound - Artist Name",
-          "likes": 1234,
-          "messages": 321,
-          "shares": 100
-        }
-      ]
+        // ... add more videos as needed
+      ];
+
       setVideos(prev => [...prev, ...newVideos]);
       setPage(prev => prev + 1);
     } catch (error) {
       console.error('Error fetching videos:', error);
     } finally {
-      setTimeout(() => setLoading(false), 1000);
+      setLoading(false);
     }
   }, [page, loading]);
 
-  // Handle scroll for infinite loading
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current || loading) return;
-
-    const { scrollTop, clientHeight, scrollHeight } = containerRef.current;
-    
-    // If we're near the bottom (within 100px), fetch more videos
-    if (scrollHeight - scrollTop - clientHeight < 100) {
-      fetchVideos();
-    }
-  }, [fetchVideos, loading]);
-
-  // Add scroll listener
   useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
+    const options = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      const lastEntry = entries[0];
+      if (lastEntry.isIntersecting && !loading) {
+        console.log("Reached bottom, fetching more videos");
+        fetchVideos();
+      }
+    }, options);
+
+    if (lastVideoRef.current) {
+      observer.observe(lastVideoRef.current);
     }
-  }, [handleScroll]);
+
+    return () => observer.disconnect();
+  }, [fetchVideos, loading]);
 
   // Initial fetch
   useEffect(() => {
-    fetchVideos();
-  });
+    if (videos.length === 0) {
+      fetchVideos();
+    }
+  }, []);
 
   return (
     <div 
       className="app__videos"
       ref={containerRef}
     >
-      {videos.map((video) => (
+      {videos.map((video, index) => (
         <div
           key={video.id}
+          ref={index === videos.length - 1 ? lastVideoRef : null}
           className="video-container"
         >
           <Video

@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import "./Video.css";
+import { VideoOverlay } from "./VideoOverlay";
 
 interface VideoProps {
   videoId: string;
@@ -25,6 +26,7 @@ export function Video({
   shares,
   messages,
 }: VideoProps) {
+  const [isVisible, setIsVisible] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -47,10 +49,12 @@ export function Video({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            videoElement.play();
+            setIsVisible(true);
+            videoRef.current?.play();
             setPlaying(true);
           } else {
-            videoElement.pause();
+            setIsVisible(false);
+            videoRef.current?.pause();
             setPlaying(false);
           }
         });
@@ -58,12 +62,11 @@ export function Video({
       { threshold: 0.6 }
     );
 
-    observer.observe(videoElement);
+    if (videoRef.current) {
+      observer.observe(videoRef.current);
+    }
 
-    return () => {
-      observer.unobserve(videoElement);
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   const handleTimeUpdate = () => {
@@ -95,8 +98,12 @@ export function Video({
         playsInline // Add this for better mobile support
         muted // Add this if you want videos to autoplay on mobile
         onTimeUpdate={handleTimeUpdate}
+        crossOrigin="anonymous" 
       ></video>
-     
+      <VideoOverlay 
+        videoElement={videoRef.current}
+        isVisible={isVisible}
+      />
       {/* ... rest of your JSX ... */}
       <div className="video__bottom">
         <div className="video__details">
