@@ -97,6 +97,7 @@ export function Video({
        <VideoOverlay 
         videoElement={videoRef.current}
         isVisible={isVisible}
+        videoId={videoId}
       />
       {/* ... rest of your JSX ... */}
       <div className="video__bottom">

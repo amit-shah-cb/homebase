@@ -4,6 +4,7 @@ class WebGLRendererManager {
   private static instance: WebGLRendererManager;
   private renderer: THREE.WebGLRenderer | null = null;
   private canvas: HTMLCanvasElement | null = null;
+  private currentVideoId: string | null = null;
 
   private constructor() {}
 
@@ -14,7 +15,12 @@ class WebGLRendererManager {
     return WebGLRendererManager.instance;
   }
 
-  getRenderer(): THREE.WebGLRenderer {
+  initRenderer(videoId: string): THREE.WebGLRenderer {
+    // If we're switching to a new video, dispose of the old renderer first
+    if (this.currentVideoId !== videoId && this.renderer) {
+      this.dispose();
+    }
+
     if (!this.renderer) {
       this.canvas = document.createElement('canvas');
       this.canvas.className = 'video-overlay';
@@ -25,7 +31,10 @@ class WebGLRendererManager {
         antialias: false,
         powerPreference: 'high-performance',
       });
+      
+      this.currentVideoId = videoId;
     }
+
     return this.renderer;
   }
 
@@ -41,10 +50,15 @@ class WebGLRendererManager {
 
   dispose(): void {
     if (this.renderer) {
+      this.renderer.forceContextLoss();
       this.renderer.dispose();
       this.renderer = null;
     }
+    if (this.canvas && this.canvas.parentElement) {
+      this.canvas.remove();
+    }
     this.canvas = null;
+    this.currentVideoId = null;
   }
 }
 
