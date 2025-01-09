@@ -20,6 +20,9 @@ export function VideoFeed() {
   const [page, setPage] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastVideoRef = useRef<HTMLDivElement>(null);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const videoRefs = useRef<{ [key: number]: HTMLVideoElement | null }>({});
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     if (loading) return;
@@ -31,7 +34,7 @@ export function VideoFeed() {
       // Simulated API call
       const newVideos = [
         {
-          "id": `${page * 4 + 1}`,
+          "id": `${ page + 1}`,
           "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
           "channel": `channel_${page * 4 + 1}`,
           "description": `Video ${page * 4 + 1} description`,
@@ -51,6 +54,16 @@ export function VideoFeed() {
       setLoading(false);
     }
   }, [page, loading]);
+
+   // Check if we need to fetch more videos
+   useEffect(() => {
+    if(loading || isTransitioning) return;
+    const remainingVideos = videos.length - (currentVideoIndex + 1);
+    if (remainingVideos == 1) {
+      console.log('Fetching more videos...');
+      fetchVideos();
+    }
+  }, [currentVideoIndex, videos.length, isTransitioning]);
 
   useEffect(() => {
     const options = {
@@ -74,12 +87,59 @@ export function VideoFeed() {
     return () => observer.disconnect();
   }, [fetchVideos, loading]);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const videoHeight = window.innerHeight;
+      const scrollPosition = container.scrollTop;
+      const index = Math.round(scrollPosition / videoHeight);
+      console.log("current video index:", index);
+      setCurrentVideoIndex(index);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Initial fetch
   useEffect(() => {
     if (videos.length === 0) {
       fetchVideos();
     }
   }, []);
+  // Smooth scroll function
+  const smoothScrollToIndex = useCallback((index: number) => {
+    if (!containerRef.current) return;
+    
+    const videoHeight = window.innerHeight;
+    const targetPosition = videoHeight * index;
+
+    containerRef.current.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth'
+    });
+  }, []);
+  const handleVideoEnd = useCallback(() => {
+    const nextIndex = currentVideoIndex + 1;
+
+    // Start transition
+    setIsTransitioning(true);
+
+   
+      // Smooth scroll to next video
+      smoothScrollToIndex(nextIndex);
+
+      // Remove transition overlay after scroll animation
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentVideoIndex(nextIndex);
+      }, 500); // Adjust timing to match scroll duration
+    
+  }, [currentVideoIndex, videos.length, smoothScrollToIndex]);
+
+ 
 
   return (
     <div 
@@ -101,6 +161,7 @@ export function VideoFeed() {
             likes={video.likes}
             shares={video.shares}
             messages={video.messages}
+            onEnded={handleVideoEnd}            
           />
         </div>
       ))}

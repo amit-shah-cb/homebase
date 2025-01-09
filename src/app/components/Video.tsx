@@ -13,6 +13,7 @@ interface VideoProps {
   likes: number;
   shares: number;
   messages: number;
+  onEnded: () => void;
 }
 
 export function Video({
@@ -24,6 +25,7 @@ export function Video({
   likes,
   shares,
   messages,
+  onEnded,
 }: VideoProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -45,8 +47,8 @@ export function Video({
       (entries) => {
         entries.forEach((entry) => {
           setIsVisible(entry.isIntersecting);
-          if (entry.isIntersecting) {
-            videoRef.current?.play();
+          if (entry.isIntersecting) {            
+            videoRef.current?.play();            
           } else {
             videoRef.current?.pause();
           }
@@ -61,6 +63,9 @@ export function Video({
 
     return () => observer.disconnect();
   }, []);
+
+ 
+ 
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -84,7 +89,7 @@ export function Video({
     <div className="video">
       <video
         className="video__player"
-        loop
+        loop={false}
         onClick={onVideoPress}
         ref={videoRef}
         src={url}
@@ -92,6 +97,7 @@ export function Video({
         muted // Add this if you want videos to autoplay on mobile
         onTimeUpdate={handleTimeUpdate}
         crossOrigin="anonymous" 
+        onEnded={onEnded}
       ></video>
        <VideoOverlay 
         videoElement={videoRef.current}
