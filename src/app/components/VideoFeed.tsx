@@ -21,7 +21,6 @@ export function VideoFeed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastVideoRef = useRef<HTMLDivElement>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const videoRefs = useRef<{ [key: number]: HTMLVideoElement | null }>({});
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const fetchVideos = useCallback(async () => {
