@@ -94,7 +94,6 @@ export function VideoFeed() {
       const videoHeight = window.innerHeight;
       const scrollPosition = container.scrollTop;
       const index = Math.round(scrollPosition / videoHeight);
-      console.log("current video index:", index);
       setCurrentVideoIndex(index);
     };
 
