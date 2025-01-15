@@ -33,10 +33,10 @@ export function VideoFeed() {
 
     try {
       // Simulated API call
-      const newVideos = [
+      const newVideos = [        
         {
           "id": `${ videos.length + 1}`,
-          "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
           "channel": `channel_${page * 4 + 1}`,
           "description": `Video ${page * 4 + 1} description`,
           "song": "Original Sound - Artist Name",
@@ -89,6 +89,7 @@ export function VideoFeed() {
   }, [fetchVideos, loading]);
 
   useEffect(() => {
+    if(!isConnected) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -101,14 +102,15 @@ export function VideoFeed() {
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isConnected]);
 
   // Initial fetch
   useEffect(() => {
+    if(!isConnected) return;
     if (videos.length === 0) {
       fetchVideos();
     }
-  }, []);
+  }, [isConnected]);
   // Smooth scroll function
   const smoothScrollToIndex = useCallback((index: number) => {
     if (!containerRef.current) return;
@@ -203,43 +205,49 @@ export function VideoFeed() {
               }
 
               return (
-                <div className="flex items-center justify-center space-x-4">
-                  <button
-                    onClick={openChainModal}
-                    type="button"
-                    className="inline-flex items-center px-4"
-                  >
-                    {chain.hasIcon && (
-                      <div
-                        className="w-3 h-3 mr-2 rounded-full overflow-hidden"
-                        style={{
-                          background: chain.iconBackground,
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? 'Chain icon'}
-                            src={chain.iconUrl}
-                            className="w-full h-full"
-                          />
-                        )}
-                      </div>
-                    )}
-                    <span className="text-sm font-small text-white-500">
-                      {chain.name}
-                    </span>
-                  </button>
-              
-                  <button
-                    onClick={openAccountModal}
-                    type="button"
-                    className="inline-flex items-center px-4"
-                  >
-                    <span className="text-sm font-small text-white-500">
-                      {account.displayName}
-                      {account.displayBalance ? ` (${account.displayBalance})` : ''}
-                    </span>
-                  </button>
+                <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center gap-4">
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 flex items-center gap-4">
+                    <button
+                      onClick={openChainModal}
+                      type="button"
+                      className="inline-flex items-center px-1.5 py-1.5 rounded-md
+                               text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      {chain.hasIcon && (
+                        <div
+                          className="w-4 h-4 mr-2 rounded-full overflow-hidden"
+                          style={{
+                            background: chain.iconBackground,
+                          }}
+                        >
+                          {chain.iconUrl && (
+                            <img
+                              alt={chain.name ?? 'Chain icon'}
+                              src={chain.iconUrl}
+                              className="w-full h-full"
+                            />
+                          )}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">
+                        {chain.name}
+                      </span>
+                    </button>
+
+                    <div className="w-px h-5 bg-white/20" /> {/* Divider */}
+
+                    <button
+                      onClick={openAccountModal}
+                      type="button"
+                      className="inline-flex items-center px-1.5 py-1.5 rounded-md
+                               text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      <span className="text-sm font-medium">
+                        {account.displayName}
+                        {account.displayBalance ? ` (${account.displayBalance})` : ''}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               );
             })()}
