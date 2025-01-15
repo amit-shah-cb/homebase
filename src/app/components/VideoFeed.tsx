@@ -203,43 +203,49 @@ export function VideoFeed() {
               }
 
               return (
-                <div className="flex items-center justify-center space-x-4">
-                  <button
-                    onClick={openChainModal}
-                    type="button"
-                    className="inline-flex items-center px-4"
-                  >
-                    {chain.hasIcon && (
-                      <div
-                        className="w-3 h-3 mr-2 rounded-full overflow-hidden"
-                        style={{
-                          background: chain.iconBackground,
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <img
-                            alt={chain.name ?? 'Chain icon'}
-                            src={chain.iconUrl}
-                            className="w-full h-full"
-                          />
-                        )}
-                      </div>
-                    )}
-                    <span className="text-sm font-small text-white-500">
-                      {chain.name}
-                    </span>
-                  </button>
-              
-                  <button
-                    onClick={openAccountModal}
-                    type="button"
-                    className="inline-flex items-center px-4"
-                  >
-                    <span className="text-sm font-small text-white-500">
-                      {account.displayName}
-                      {account.displayBalance ? ` (${account.displayBalance})` : ''}
-                    </span>
-                  </button>
+                <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center justify-center gap-4">
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 flex items-center gap-4">
+                    <button
+                      onClick={openChainModal}
+                      type="button"
+                      className="inline-flex items-center px-1.5 py-1.5 rounded-md
+                               text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      {chain.hasIcon && (
+                        <div
+                          className="w-4 h-4 mr-2 rounded-full overflow-hidden"
+                          style={{
+                            background: chain.iconBackground,
+                          }}
+                        >
+                          {chain.iconUrl && (
+                            <img
+                              alt={chain.name ?? 'Chain icon'}
+                              src={chain.iconUrl}
+                              className="w-full h-full"
+                            />
+                          )}
+                        </div>
+                      )}
+                      <span className="text-sm font-medium">
+                        {chain.name}
+                      </span>
+                    </button>
+
+                    <div className="w-px h-5 bg-white/20" /> {/* Divider */}
+
+                    <button
+                      onClick={openAccountModal}
+                      type="button"
+                      className="inline-flex items-center px-1.5 py-1.5 rounded-md
+                               text-white hover:bg-white/10 transition-colors duration-200"
+                    >
+                      <span className="text-sm font-medium">
+                        {account.displayName}
+                        {account.displayBalance ? ` (${account.displayBalance})` : ''}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               );
             })()}
