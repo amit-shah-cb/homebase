@@ -36,7 +36,7 @@ export function VideoFeed() {
       const newVideos = [        
         {
           "id": `${ videos.length + 1}`,
-          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
           "channel": `channel_${page * 4 + 1}`,
           "description": `Video ${page * 4 + 1} description`,
           "song": "Original Sound - Artist Name",
