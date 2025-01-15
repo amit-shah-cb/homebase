@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Video } from './Video';
-
+import { useAccount } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 interface VideoData {
   id: string;
   url: string;
@@ -15,6 +16,7 @@ interface VideoData {
 }
 
 export function VideoFeed() {
+  const { isConnected } = useAccount();
   const [videos, setVideos] = useState<VideoData[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -33,7 +35,7 @@ export function VideoFeed() {
       // Simulated API call
       const newVideos = [
         {
-          "id": `${ page + 1}`,
+          "id": `${ videos.length + 1}`,
           "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
           "channel": `channel_${page * 4 + 1}`,
           "description": `Video ${page * 4 + 1} description`,
@@ -44,7 +46,7 @@ export function VideoFeed() {
         },
         // ... add more videos as needed
       ];
-
+      
       setVideos(prev => [...prev, ...newVideos]);
       setPage(prev => prev + 1);
     } catch (error) {
@@ -54,15 +56,15 @@ export function VideoFeed() {
     }
   }, [page, loading]);
 
-   // Check if we need to fetch more videos
-   useEffect(() => {
-    if(loading || isTransitioning) return;
-    const remainingVideos = videos.length - (currentVideoIndex + 1);
-    if (remainingVideos == 1) {
-      console.log('Fetching more videos...');
-      fetchVideos();
-    }
-  }, [currentVideoIndex, videos.length, isTransitioning]);
+  // Check if we need to fetch more videos
+  //  useEffect(() => {
+  //   if(loading || isTransitioning) return;
+  //   const remainingVideos = videos.length - (currentVideoIndex + 1);
+  //   if (remainingVideos == 1) {
+  //     console.log('Fetching more videos...');
+  //     fetchVideos();
+  //   }
+  // }, [currentVideoIndex, videos.length, loading, isTransitioning]);
 
   useEffect(() => {
     const options = {
@@ -74,7 +76,7 @@ export function VideoFeed() {
     const observer = new IntersectionObserver((entries) => {
       const lastEntry = entries[0];
       if (lastEntry.isIntersecting && !loading) {
-        console.log("Reached bottom, fetching more videos");
+        console.log("Reached bottom, fetching more videos");        
         fetchVideos();
       }
     }, options);
@@ -135,18 +137,125 @@ export function VideoFeed() {
         setCurrentVideoIndex(nextIndex);
       }, 500); // Adjust timing to match scroll duration
     
-  }, [currentVideoIndex, videos.length, smoothScrollToIndex]);
+  }, [currentVideoIndex, smoothScrollToIndex]);
 
  
 
   return (
+    <>
+    <ConnectButton.Custom>
+      {({
+        account,
+        chain,
+        openAccountModal,
+        openChainModal,
+        openConnectModal,
+        authenticationStatus,
+        mounted,
+      }) => {
+        // Note: If your app doesn't use authentication, you
+        // can remove all 'authenticationStatus' checks
+        const ready = mounted && authenticationStatus !== 'loading';
+        const connected =
+          ready &&
+          account &&
+          chain &&
+          (!authenticationStatus ||
+            authenticationStatus === 'authenticated');
+
+        return (
+          <div
+            {...(!ready && {
+              'aria-hidden': true,
+              'style': {
+                opacity: 0,
+                pointerEvents: 'none',
+                userSelect: 'none',
+              },
+            })}
+          >
+            {(() => {
+              if (!connected) {
+                return (
+                
+                  <div className="h-screen w-full flex flex-col items-center justify-center">
+                  <button 
+                    onClick={openConnectModal} 
+                    type="button"
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg text-sm
+                             hover:bg-indigo-700 transition-colors duration-200 shadow-md
+                             hover:shadow-lg transform hover:scale-105
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Connect Wallet
+                  </button>
+                </div>
+                    
+                );
+              }
+
+              if (chain.unsupported) {
+                return (
+                  <button onClick={openChainModal} type="button" className="h-screen w-full flex flex-col items-center justify-center">
+                    Wrong network
+                  </button>
+                );
+              }
+
+              return (
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={openChainModal}
+                    type="button"
+                    className="inline-flex items-center px-4"
+                  >
+                    {chain.hasIcon && (
+                      <div
+                        className="w-3 h-3 mr-2 rounded-full overflow-hidden"
+                        style={{
+                          background: chain.iconBackground,
+                        }}
+                      >
+                        {chain.iconUrl && (
+                          <img
+                            alt={chain.name ?? 'Chain icon'}
+                            src={chain.iconUrl}
+                            className="w-full h-full"
+                          />
+                        )}
+                      </div>
+                    )}
+                    <span className="text-sm font-small text-white-500">
+                      {chain.name}
+                    </span>
+                  </button>
+              
+                  <button
+                    onClick={openAccountModal}
+                    type="button"
+                    className="inline-flex items-center px-4"
+                  >
+                    <span className="text-sm font-small text-white-500">
+                      {account.displayName}
+                      {account.displayBalance ? ` (${account.displayBalance})` : ''}
+                    </span>
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        );
+      }}
+    </ConnectButton.Custom>
+   
     <div 
       className="app__videos"
       ref={containerRef}
-    >
-      {videos.map((video, index) => (
-        <div
-          key={video.id}
+    >      
+          
+          {isConnected && videos.map((video, index) => (
+            <div
+              key={`video-${video.id}`}
           ref={index === videos.length - 1 ? lastVideoRef : null}
           className="video-container"
         >
@@ -163,11 +272,15 @@ export function VideoFeed() {
           />
         </div>
       ))}
-      {loading && (
+      {(loading||isTransitioning) && (
         <div className="loading-indicator">
           <div className="loading-spinner"></div>
         </div>
       )}
+      
+      
+      
     </div>
+    </>
   );
 }
