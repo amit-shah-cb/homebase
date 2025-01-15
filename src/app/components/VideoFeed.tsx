@@ -33,10 +33,10 @@ export function VideoFeed() {
 
     try {
       // Simulated API call
-      const newVideos = [
+      const newVideos = [        
         {
           "id": `${ videos.length + 1}`,
-          "url": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+          "url": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
           "channel": `channel_${page * 4 + 1}`,
           "description": `Video ${page * 4 + 1} description`,
           "song": "Original Sound - Artist Name",
@@ -89,6 +89,7 @@ export function VideoFeed() {
   }, [fetchVideos, loading]);
 
   useEffect(() => {
+    if(!isConnected) return;
     const container = containerRef.current;
     if (!container) return;
 
@@ -101,14 +102,15 @@ export function VideoFeed() {
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isConnected]);
 
   // Initial fetch
   useEffect(() => {
+    if(!isConnected) return;
     if (videos.length === 0) {
       fetchVideos();
     }
-  }, []);
+  }, [isConnected]);
   // Smooth scroll function
   const smoothScrollToIndex = useCallback((index: number) => {
     if (!containerRef.current) return;
