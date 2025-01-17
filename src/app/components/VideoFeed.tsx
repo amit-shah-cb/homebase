@@ -2,10 +2,14 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Video } from './Video';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage,usePublicClient } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { SiweMessage } from 'siwe';
 import { base } from 'wagmi/chains';
+import pbkdf from 'js-crypto-pbkdf';
+import { parseErc6492Signature } from "viem";
+
+import { Connection, Keypair, Logs, ParsedInnerInstruction, ParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from "@solana/web3.js";
 
 interface VideoData {
   id: string;
@@ -31,6 +35,16 @@ export function VideoFeed() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { signMessageAsync } = useSignMessage()
 
+  const client = usePublicClient({chainId:base.id});
+
+  const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+  const RAYDIUM_POOL_V4_PROGRAM_ID = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
+  const SERUM_OPENBOOK_PROGRAM_ID = 'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX';
+  const SOL_MINT = 'So11111111111111111111111111111111111111112';
+  const SOL_DECIMALS = 9;
+
+  const connection = new Connection(RPC_ENDPOINT);
+  const seenTransactions: Array<string> = []; // The log listener is sometimes triggered multiple times for a single transaction, don't react to tranasctions we've already seen
 
   const fetchVideos = useCallback(async () => {
     if (loading) return;
@@ -73,10 +87,45 @@ export function VideoFeed() {
   //   }
   // }, [currentVideoIndex, videos.length, loading, isTransitioning]);
 
+  // useEffect(() => {
+  //   navigator.credentials.create({
+  //     publicKey: {
+  //         rp: {name: "Acme"},
+  //         user: {
+  //             id: new Uint8Array(16),
+  //             name: `${address}@homebase`,
+  //             displayName: "Homebase"
+  //         },
+  //         pubKeyCredParams: [{type: "public-key", alg: -257},],
+  //         timeout: 60000,
+  //         authenticatorSelection: {
+  //             authenticatorAttachment: "platform",
+  //             residentKey: "required",
+  //         },
+  //         extensions: {prf: {}},
+  
+  //         // unused without attestation so a dummy value is fine.
+  //         challenge: new Uint8Array([0]).buffer,
+  //     }
+  // }).then((c) => {console.log(c.getClientExtensionResults());});
+  // },[])
   const authenticate = useCallback(async () => {
     if (!address) return;
 
     try {
+    //   const c = await navigator.credentials.get({
+    //     publicKey: {
+          
+    //         timeout: 60000,
+    //         challenge: new Uint8Array([ 
+    //             // must be a cryptographically random number sent from a server. Don't use dummy
+    //             // values in real authentication situations.
+    //             1,2,3,4,
+    //         ]).buffer,
+    //         extensions: {prf: {eval: {first: new TextEncoder().encode("Foo encryption key")}}},
+    //     },
+    // })
+    // console.log((c as any).getClientExtensionResults());
       // Create SIWE message
       const message = new SiweMessage({
         domain: window.location.host,
@@ -86,20 +135,59 @@ export function VideoFeed() {
         version: '1',
         chainId: base.id,
         nonce: '0xdeadbeefdeadbeefdeadbeef', // You'll need to implement this
+        issuedAt: "2025-01-17T12:00:00.000Z",
+        expirationTime: "2030-01-17T12:00:00.000Z",
+        notBefore: "2025-01-17T12:00:00.000Z",
+        requestId: "0xdeadbeefdeadbeefdeadbeef",
+        resources:[]
       });
 
-      // Create message string
-      const messageString = message.prepareMessage();
+      
 
+      // Create message string
+      const messageString = message.prepareMessage();     
       // Sign message
       const signature = await signMessageAsync({
         message: messageString,
+
       });
+      const parsedSignature = parseErc6492Signature(signature).signature
+      console.log("signature:", signature)
+      console.log("parsedSignature:", parsedSignature)
+          
+      client.verifyMessage({
+        address: address,
+        message: message.prepareMessage(),
+        signature,
+      }).then((result) => {
+        console.log("result:", result)
+      })
+      
+      
+      
+      
+      
+      const salt = new Uint8Array(0); // Uint8Array
+      const iterationCount = 1024;
+      const derivedKeyLen = 32;
+      const hash = 'SHA3-512'; // 'SHA-384', 'SHA-512', 'SHA-1', 'MD5', 'SHA3-512', 'SHA3-384', 'SHA3-256', or 'SHA3-224'
 
-
-      // Store the token
-      localStorage.setItem('auth_token', signature);
-      setIsAuthenticated(true);
+      pbkdf.pbkdf2(
+        signature,
+        salt,
+        iterationCount,
+        derivedKeyLen,
+        hash
+      ).then( (key) => {
+        console.log(key)
+        const keypair = Keypair.fromSeed(key);
+        console.log("generate public key:", keypair.publicKey.toBase58());            
+        // Store the token
+        localStorage.setItem('auth_token', Buffer.from(keypair.secretKey).toString('base64'));
+        setIsAuthenticated(true);
+   
+        // now you get the derived key of intended length
+      });
 
 
     } catch (error) {
@@ -215,6 +303,14 @@ export function VideoFeed() {
   }, [currentVideoIndex, smoothScrollToIndex]);
 
   const handleDoubleTap = useCallback(() => {
+    console.log("Double tap");
+    connection.getBlockHeight().then((height) => {
+      console.log("Block height:", height);
+      const token = localStorage.getItem('auth_token') as string;
+      const keypair = Keypair.fromSecretKey(Buffer.from(token, 'base64'));
+      console.log("retrieved public key:", keypair.publicKey.toBase58());
+      
+    });
     setIsExpanded(prev => !prev);
   }, []);
 
