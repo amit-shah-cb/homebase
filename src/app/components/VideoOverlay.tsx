@@ -1,18 +1,22 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import WebGLRendererManager from './webglManager';
+
+// Import post-processing modules from three-stdlib
+import { EffectComposer,RenderPass,ShaderPass, RGBShiftShader, FilmShader,CopyShader } from 'three-stdlib';
+import { BadTVShader } from './shaders/BadTVShader';
+import { StaticShader } from './shaders/StaticShader';
 
 interface VideoOverlayProps {
   videoElement: HTMLVideoElement | null;
   isVisible: boolean;
-  videoId: string; // Add videoId prop
+  videoId: string;
 }
 
 export function VideoOverlay({ videoElement, isVisible, videoId }: VideoOverlayProps) {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
-  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const textureRef = useRef<THREE.VideoTexture | null>(null);
+  const composerRef = useRef<EffectComposer | null>(null);
   const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
@@ -29,57 +33,104 @@ export function VideoOverlay({ videoElement, isVisible, videoId }: VideoOverlayP
       videoElement.parentElement?.appendChild(canvas);
     }
 
-    // Setup scene
+    // Setup scene and camera
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    
+
     sceneRef.current = scene;
     cameraRef.current = camera;
 
+    // Create video texture
     const videoTexture = new THREE.VideoTexture(videoElement);
     videoTexture.minFilter = THREE.LinearFilter;
     videoTexture.magFilter = THREE.LinearFilter;
-    textureRef.current = videoTexture;
 
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        videoTexture: { value: videoTexture },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float time;
-        uniform sampler2D videoTexture;
-        varying vec2 vUv;
-
-        void main() {
-          vec4 videoColor = texture2D(videoTexture, vUv);
-          float wave = sin(vUv.y * 10.0 + time) * 0.05;
-          vec2 distortedUV = vUv + vec2(wave, 0.0);
-          gl_FragColor = texture2D(videoTexture, distortedUV);
-        }
-      `,
-    });
-    materialRef.current = material;
-
+    // Create plane geometry and material
     const geometry = new THREE.PlaneGeometry(2, 2);
-    const plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
+    const material = new THREE.MeshBasicMaterial({ map: videoTexture });
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
 
+    // POST-PROCESSING
+    // Create Effect Composer
+    const composer = new EffectComposer(renderer);
+    composerRef.current = composer;
+
+    // Create Shader Passes
+    const renderPass = new RenderPass(scene, camera);
+    const badTVPass = new ShaderPass(BadTVShader);
+    const rgbPass = new ShaderPass(RGBShiftShader);
+    const filmPass = new ShaderPass(FilmShader);
+    const staticPass = new ShaderPass(StaticShader);
+    const copyPass = new ShaderPass(CopyShader);
+
+    // Set shader uniforms
+    filmPass.uniforms['grayscale'].value = 0;
+
+    // Initialize shader parameters
+    const badTVParams = {
+      mute: true,
+      show: true,
+      distortion: 1.3,
+      distortion2: 1.0,
+      speed: 0.3,
+      rollSpeed: 0.0,
+    };
+
+    const staticParams = {
+      show: true,
+      amount: 0.1,
+      size: .05,
+    };
+
+    const rgbParams = {
+      show: true,
+      amount: 0.01,
+      angle: 0.1,
+    };
+
+    const filmParams = {
+      show: true,
+      count: 800,
+      sIntensity: 0.4,
+      nIntensity: 0.2,
+    };
+
+    // Apply parameters to shader uniforms
+    badTVPass.uniforms['distortion'].value = badTVParams.distortion;
+    badTVPass.uniforms['distortion2'].value = badTVParams.distortion2;
+    badTVPass.uniforms['speed'].value = badTVParams.speed;
+    badTVPass.uniforms['rollSpeed'].value = badTVParams.rollSpeed;
+
+    staticPass.uniforms['amount'].value = staticParams.amount;
+    staticPass.uniforms['size'].value = staticParams.size;
+
+    rgbPass.uniforms['angle'].value = rgbParams.angle;
+    rgbPass.uniforms['amount'].value = rgbParams.amount;
+
+    filmPass.uniforms['sCount'].value = filmParams.count;
+    filmPass.uniforms['sIntensity'].value = filmParams.sIntensity;
+    filmPass.uniforms['nIntensity'].value = filmParams.nIntensity;
+
+    // Add passes to composer
+    composer.addPass(renderPass);
+    if (badTVParams.show) composer.addPass(badTVPass);
+    if (rgbParams.show) composer.addPass(rgbPass);
+    if (filmParams.show) composer.addPass(filmPass);
+    if (staticParams.show) composer.addPass(staticPass);
+    composer.addPass(copyPass);
+
+    // Animation loop
     const animate = (time: number) => {
       if (!isVisible) return;
-      
-      material.uniforms.time.value = time * 0.001;
-      if (textureRef.current) {
-        textureRef.current.needsUpdate = true;
-      }
-      renderer.render(scene, camera);
+
+      // Update time uniforms
+      const elapsedTime = time * 0.001;
+      badTVPass.uniforms['time'].value = elapsedTime;
+      filmPass.uniforms['time'].value = elapsedTime;
+      staticPass.uniforms['time'].value = elapsedTime;
+
+      composer.render();
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
@@ -87,6 +138,7 @@ export function VideoOverlay({ videoElement, isVisible, videoId }: VideoOverlayP
       const width = videoElement.clientWidth;
       const height = videoElement.clientHeight;
       webglManager.setSize(width, height);
+      composer.setSize(width, height);
     };
 
     handleResize();
@@ -104,6 +156,8 @@ export function VideoOverlay({ videoElement, isVisible, videoId }: VideoOverlayP
       material.dispose();
       videoTexture.dispose();
       scene.clear();
+
+      composer.dispose();
 
       // If we're no longer visible, dispose of the renderer
       if (!isVisible) {
