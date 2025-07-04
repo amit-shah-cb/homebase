@@ -17,8 +17,8 @@ export async function GET(request: Request) {
             })
 
 
-        const data = await response.token;
-        return NextResponse.json(data);
+        // const data = await response.token;
+        return NextResponse.json(response);
 
     } catch (error) {
         console.error('Error fetching trending tokens:', error);
