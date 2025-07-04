@@ -9,7 +9,7 @@ import { base } from 'wagmi/chains';
 import pbkdf from 'js-crypto-pbkdf';
 import { parseErc6492Signature } from "viem";
 
-import { Connection, Keypair, Logs, ParsedInnerInstruction, ParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, /*Logs, ParsedInnerInstruction, ParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey */ } from "@solana/web3.js";
 
 interface VideoData {
   id: string;
@@ -38,13 +38,13 @@ export function VideoFeed() {
   const client = usePublicClient({chainId:base.id});
 
   const RPC_ENDPOINT = 'https://api.devnet.solana.com';
-  const RAYDIUM_POOL_V4_PROGRAM_ID = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
-  const SERUM_OPENBOOK_PROGRAM_ID = 'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX';
-  const SOL_MINT = 'So11111111111111111111111111111111111111112';
-  const SOL_DECIMALS = 9;
+  // const RAYDIUM_POOL_V4_PROGRAM_ID = '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8';
+  // const SERUM_OPENBOOK_PROGRAM_ID = 'srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX';
+  // const SOL_MINT = 'So11111111111111111111111111111111111111112';
+  // const SOL_DECIMALS = 9;
 
   const connection = new Connection(RPC_ENDPOINT);
-  const seenTransactions: Array<string> = []; // The log listener is sometimes triggered multiple times for a single transaction, don't react to tranasctions we've already seen
+  // const seenTransactions: Array<string> = []; // The log listener is sometimes triggered multiple times for a single transaction, don't react to tranasctions we've already seen
 
   const fetchVideos = useCallback(async () => {
     if (loading) return;
@@ -155,7 +155,7 @@ export function VideoFeed() {
       console.log("signature:", signature)
       console.log("parsedSignature:", parsedSignature)
           
-      client.verifyMessage({
+      client?.verifyMessage({
         address: address,
         message: message.prepareMessage(),
         signature,
