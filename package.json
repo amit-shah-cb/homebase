@@ -16,7 +16,7 @@
     "@types/three": "^0.172.0",
     "js-crypto-pbkdf": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.1.4",
+    "next": "15.1.11",
     "pino-pretty": "^10.3.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
